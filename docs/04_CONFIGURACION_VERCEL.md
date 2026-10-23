@@ -4,7 +4,23 @@ Esta guía reemplaza las instrucciones de Netlify para el despliegue actual. La 
 
 ## Plan y ejecución
 
-El `vercel.json` del bot ejecuta `/api/cron` cada minuto. **Requiere Vercel Pro o Enterprise**: Hobby solo admite cron diario y rechaza este despliegue. No cambies la frecuencia a diaria: retrasaría respuestas, reintentos y recordatorios. Si se necesita Hobby, hace falta configurar otro programador seguro con frecuencia de un minuto; no está incluido en esta adaptación.
+El `vercel.json` no registra cron nativo para permitir desplegar en Hobby. La ruta protegida `/api/cron` está disponible, pero **no se ejecuta automáticamente**: hay que configurar un programador externo. Hobby solo admite cron nativo diario; cambiar la frecuencia a diaria no sirve para un bot que responde mensajes.
+
+### Hobby: programador externo
+
+Después de publicar, configura en tu programador una petición **GET cada minuto** a `https://DOMINIO-REAL-DEL-BOT/api/cron`, con la cabecera **`Authorization: Bearer VALOR_DE_CRON_SECRET`**. Usa el valor exacto guardado en Vercel Production; no lo pongas en la URL ni en GitHub. El proveedor del programador guardará esta clave: utiliza una clave exclusiva para esta finalidad. No envíes claves de Supabase ni de Meta al programador.
+
+El programador debe admitir cabeceras privadas y solicitudes de hasta 300 segundos. El límite de tiempo de una ejecución puede superar el intervalo; la cola de Supabase controla reclamaciones concurrentes. Configura avisos de fallos y revisa el resultado: 200 indica ejecución atendida, 401 clave incorrecta y 503 fallo del trabajador. Un 200 con `enabled:false` significa que no se procesó nada. Sin programador los mensajes quedan en cola aunque el webhook responda correctamente. El código no crea una cuenta ni registra un trabajo externo por sí solo.
+
+### Pro: cron nativo opcional
+
+Si se usa Pro, se puede añadir al nivel principal de `vercel.json` y redesplegar:
+
+```json
+"crons": [{"path": "/api/cron", "schedule": "* * * * *"}]
+```
+
+Vercel enviará automáticamente `CRON_SECRET` como Bearer. Usa un solo programador activo. No añadas esta propiedad en Hobby porque impedirá desplegar.
 
 La función cron espera el procesamiento dentro de la solicitud, sin depender de procesos que sigan vivos después de responder. Su duración máxima es 300 segundos; cada lote comienza trabajos durante un máximo de 90 segundos, hasta 60 trabajos. Un trabajo iniciado puede continuar después de esos 90 segundos. La cola persiste el resto, conserva sus bloqueos y controla envíos inciertos. Hay que vigilar tiempos y volumen en producción.
 
@@ -32,7 +48,7 @@ En WhatsApp → Configuración → Webhooks:
 
 El dominio debe ser accesible desde Meta sin una pantalla de autenticación de Vercel. Usa el dominio estable de producción, no una URL de Preview. La verificación GET funciona con el bot apagado; los eventos POST devuelven 503 mientras siga apagado.
 
-Cuando estén configurados Meta, el número, las plantillas y la empresa en el portal, activa `BOT_ENABLED=true` en Production y redespliega. Comprueba **Cron Jobs** y **Logs**: el cron debe responder 200; sin secreto debe responder 401. Prueba vinculación, una consulta y una foto con un número autorizado antes de habilitar al equipo. El procesamiento habitual puede esperar hasta la siguiente ejecución por minuto; no se promete respuesta instantánea.
+Cuando estén configurados Meta, el número, las plantillas y la empresa en el portal, activa `BOT_ENABLED=true` en Production y redespliega. Comprueba el programador externo (o **Cron Jobs** si usas Pro) y **Logs**: el cron debe responder 200; sin secreto debe responder 401. Prueba vinculación, una consulta y una foto con un número autorizado antes de habilitar al equipo. El procesamiento habitual puede esperar hasta la siguiente ejecución por minuto; no se promete respuesta instantánea.
 
 ## Seguridad y transición
 

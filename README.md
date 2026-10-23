@@ -10,7 +10,7 @@ Módulo independiente sobre la base Supabase existente de Team's Ohana (nombre r
 - Finalización con nueva imagen. Migración con validación diferida en PostgreSQL, también para web/API; no requiere aprobación adicional del líder.
 - Notificación de asignación/reasignación, imágenes privadas, seguimiento diario, vencimientos y resumen de equipos para líderes.
 - Portal de vinculación/configuración, horarios, preferencias, cuotas de IA, deduplicación, bloqueo de conversaciones y control de reintentos.
-- Vercel Functions + Cron cada minuto (plan Pro); desarrollo local con Node 22 o superior. Adaptadores Netlify conservados como compatibilidad.
+- Vercel Functions compatible con Hobby; procesamiento por minuto mediante programador externo autenticado. El cron nativo por minuto es opcional en Pro. Desarrollo local con Node 22 o superior. Adaptadores Netlify conservados como compatibilidad.
 
 ## Ejecutar localmente
 

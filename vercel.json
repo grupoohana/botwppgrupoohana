@@ -7,7 +7,6 @@
     "api/index.mjs": {"maxDuration": 60},
     "api/cron.mjs": {"maxDuration": 300}
   },
-  "crons": [{"path": "/api/cron", "schedule": "* * * * *"}],
   "rewrites": [
     {"source": "/api/webhook", "destination": "/api/index"},
     {"source": "/api/health", "destination": "/api/index"},
