@@ -38,6 +38,7 @@ Las migraciones están en `migrations/`: aplicar las cuatro, en orden, **solo de
 7. [Puesta en producción](docs/07_PUESTA_EN_PRODUCCION.md)
 8. [Variables de entorno](docs/08_VARIABLES_ENTORNO.md)
 9. [Informe de entrega y cambios](docs/09_ENTREGA.md)
+10. [Vincular WhatsApp desde la app](docs/10_VINCULACION_DESDE_APP.md)
 
 ## Límites operativos
 

@@ -16,7 +16,8 @@ export function createApp(overrides={}) {
     const path=new URL(req.url).pathname.replace(/^\/\.netlify\/functions\/api/,'/api');
     if(path==='/api/webhook')return webhook(req,{c,db});
     const headers={'content-type':'application/json','cache-control':'no-store','x-content-type-options':'nosniff'};
-    const origin=req.headers.get('origin');if(origin&&origin!==c.adminOrigin)return Response.json({error:'Origen no autorizado'},{status:403,headers});
+    let appOrigin='';try{const url=new URL(c.appUrl);if(['https:','http:'].includes(url.protocol))appOrigin=url.origin;}catch{}
+    const origin=req.headers.get('origin');if(origin&&origin!==c.adminOrigin&&origin!==appOrigin)return Response.json({error:'Origen no autorizado'},{status:403,headers});
     if(origin){headers['access-control-allow-origin']=origin;headers.vary='Origin';}
     if(req.method==='OPTIONS')return new Response(null,{status:204,headers:{...headers,'access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'authorization,content-type'}});
     if(path==='/api/health')return Response.json({service:'alba-flow-whatsapp',enabled:c.enabled,configured:!!(c.supabaseUrl&&c.serviceKey&&c.phoneId&&c.metaToken&&c.appSecret&&c.verifyToken&&c.graphVersion),aiConfigured:!!c.openaiKey},{headers});
@@ -43,7 +44,9 @@ export function createApp(overrides={}) {
       await db.user(jwt);
       if(path==='/api/link') {
         const code=token();const result=await db.rpc('wa_link_start',{p_empresa:body.company_id,p_phone:phone(body.phone),p_hash:hash(code),p_consent:body.consent===true},jwt);
-        return Response.json({...result,message:`VINCULAR ${code}`},{headers});
+        const message=`VINCULAR ${code}`;let whatsapp_url=null;
+        try{whatsapp_url=`https://wa.me/${await meta.phoneNumber()}?text=${encodeURIComponent(message)}`;}catch{}
+        return Response.json({...result,message,whatsapp_url},{headers});
       }
       const name=path==='/api/admin'?'wa_admin':'wa_account';
       if(path==='/api/admin'&&body.action==='retry') {if(!uuid(body.options?.job_id))throw Error('Job inválido');await db.rpc('wa_retry',{p_empresa:body.company_id,p_job:body.options.job_id,p_accept_duplicate_risk:body.options.accept_duplicate_risk===true},jwt);return Response.json({ok:true},{headers});}

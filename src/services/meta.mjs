@@ -3,6 +3,13 @@ import { requireConfig } from '../config/env.mjs';
 import { boundedBytes, validateImage } from '../evidence/images.mjs';
 export class Meta {
   constructor(c, fetcher = fetch) { this.c = c; this.fetcher = fetcher; }
+  async phoneNumber() {
+    if(!/^\d+$/.test(this.c.phoneId))throw new Error('Canal inválido');
+    const data=await this.api(`${this.c.phoneId}?fields=display_phone_number`);
+    const value=String(data.display_phone_number||'').replace(/[^0-9]/g,'');
+    if(!/^[1-9]\d{7,14}$/.test(value))throw new Error('Número del bot no disponible');
+    return value;
+  }
   async api(path, options = {}) {
     requireConfig(this.c, ['metaToken','graphVersion']);
     if (!/^v\d+\.\d+$/.test(this.c.graphVersion)) throw new Error('Versión Graph inválida.');
