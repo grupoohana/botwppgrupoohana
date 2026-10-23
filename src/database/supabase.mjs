@@ -4,7 +4,7 @@ export class Database {
   constructor(c, fetcher = fetch) { this.c = c; this.fetcher = fetcher; }
   async rpc(name, args, jwt) {
     requireConfig(this.c, ['supabaseUrl','serviceKey']);
-    const r = await request(`${this.c.supabaseUrl}/rest/v1/rpc/${name}`, { method: 'POST', headers: { apikey: this.c.serviceKey, authorization: `Bearer ${jwt || this.c.serviceKey}`, 'content-type': 'application/json' }, body: JSON.stringify(args) }, { fetcher: this.fetcher, service: 'Supabase' });
+    const r = await request(`${this.c.supabaseUrl}/rest/v1/rpc/${name}`, { method: 'POST', headers: { apikey: this.c.serviceKey, authorization: `Bearer ${jwt || this.c.serviceKey}`, 'content-type': 'application/json' }, body: JSON.stringify(args) }, { fetcher: this.fetcher, service: 'Supabase', readErrorCode:true });
     return r.json();
   }
   async user(jwt) {

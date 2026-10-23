@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
 import {createApp} from '../src/api/app.mjs';
 import {Meta} from '../src/services/meta.mjs';
+import {Database} from '../src/database/supabase.mjs';
+
+test('configuración ausente devuelve indicación concreta sin filtrar detalles SQL',async()=>{
+  const db=new Database({supabaseUrl:'https://database.example',serviceKey:'private-key'},async url=>url.endsWith('/auth/v1/user')?Response.json({id:randomUUID()}):Response.json({code:'P0002',message:'private database detail'},{status:400}));
+  const app=createApp({c:{},db,meta:{},tasks:{},ai:{}});
+  const response=await app.handler(new Request('https://bot.example/api/link',{method:'POST',headers:{authorization:'Bearer session','content-type':'application/json'},body:JSON.stringify({company_id:randomUUID(),phone:'51999999999',consent:true})}));
+  assert.equal(response.status,409);const result=await response.json();assert.match(result.error,/Configurar WhatsApp de la empresa/);assert.equal(result.error.includes('private database detail'),false);
+});
 
 test('app vincula con JWT y origen autorizado; entrega código y enlace sin claves',async()=>{
   const company=randomUUID();let savedHash,lookups=0;
