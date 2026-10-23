@@ -2,6 +2,10 @@ import { request } from '../services/http.mjs';
 import { requireConfig } from '../config/env.mjs';
 export class Database {
   constructor(c, fetcher = fetch) { this.c = c; this.fetcher = fetcher; }
+  async authReady() {
+    const response=await request(`${this.c.supabaseUrl}/auth/v1/settings`,{headers:{apikey:this.c.serviceKey}},{fetcher:this.fetcher,service:'Autenticación',timeout:5000});
+    await response.body?.cancel();return true;
+  }
   async rpc(name, args, jwt) {
     requireConfig(this.c, ['supabaseUrl','serviceKey']);
     const r = await request(`${this.c.supabaseUrl}/rest/v1/rpc/${name}`, { method: 'POST', headers: { apikey: this.c.serviceKey, authorization: `Bearer ${jwt || this.c.serviceKey}`, 'content-type': 'application/json' }, body: JSON.stringify(args) }, { fetcher: this.fetcher, service: 'Supabase', readErrorCode:true });

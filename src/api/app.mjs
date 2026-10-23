@@ -20,7 +20,12 @@ export function createApp(overrides={}) {
     const origin=req.headers.get('origin');if(origin&&origin!==c.adminOrigin&&origin!==appOrigin)return Response.json({error:'Origen no autorizado'},{status:403,headers});
     if(origin){headers['access-control-allow-origin']=origin;headers.vary='Origin';}
     if(req.method==='OPTIONS')return new Response(null,{status:204,headers:{...headers,'access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'authorization,content-type'}});
-    if(path==='/api/health')return Response.json({service:'alba-flow-whatsapp',enabled:c.enabled,configured:!!(c.supabaseUrl&&c.serviceKey&&c.phoneId&&c.metaToken&&c.appSecret&&c.verifyToken&&c.graphVersion),aiConfigured:!!c.openaiKey},{headers});
+    if(path==='/api/health'){
+      let authReady=null,project=null;
+      try{const host=new URL(c.supabaseUrl).hostname;if(/^[a-z0-9]+\.supabase\.co$/.test(host))project=host;}catch{}
+      if(project&&db.authReady){try{authReady=await db.authReady();}catch{authReady=false;}}
+      return Response.json({service:'alba-flow-whatsapp',enabled:c.enabled,configured:!!(c.supabaseUrl&&c.serviceKey&&c.phoneId&&c.metaToken&&c.appSecret&&c.verifyToken&&c.graphVersion),aiConfigured:!!c.openaiKey,supabaseProject:project,authReady},{headers});
+    }
     if(path==='/api/session') {
       if(req.method!=='POST')return Response.json({error:'Método no permitido'},{status:405,headers});
       try {
