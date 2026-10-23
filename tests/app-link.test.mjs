@@ -5,6 +5,16 @@ import {createApp} from '../src/api/app.mjs';
 import {Meta} from '../src/services/meta.mjs';
 import {Database} from '../src/database/supabase.mjs';
 
+test('clave rechazada del servidor no se confunde con sesión vencida',async()=>{
+  for(const settingsStatus of [200,401]){
+    const db=new Database({supabaseUrl:'https://database.example',serviceKey:'private-test-key'},async url=>url.endsWith('/auth/v1/settings')?Response.json({}, {status:settingsStatus}):Response.json({message:'private detail'},{status:401}));
+    const app=createApp({c:{},db,meta:{},tasks:{},ai:{}});
+    const response=await app.handler(new Request('https://bot.example/api/link',{method:'POST',headers:{authorization:'Bearer session','content-type':'application/json'},body:JSON.stringify({company_id:randomUUID(),phone:'51999999999',consent:true})}));
+    assert.equal(response.status,settingsStatus===200?401:503);const data=await response.json();
+    assert.equal(data.error.includes('SUPABASE_SERVICE_ROLE_KEY'),settingsStatus!==200);assert.equal(data.error.includes('private-test-key'),false);
+  }
+});
+
 test('configuración ausente devuelve indicación concreta sin filtrar detalles SQL',async()=>{
   const db=new Database({supabaseUrl:'https://database.example',serviceKey:'private-key'},async url=>url.endsWith('/auth/v1/user')?Response.json({id:randomUUID()}):Response.json({code:'P0002',message:'private database detail'},{status:400}));
   const app=createApp({c:{},db,meta:{},tasks:{},ai:{}});

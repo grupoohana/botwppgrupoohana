@@ -12,7 +12,14 @@ export class Database {
     return r.json();
   }
   async user(jwt) {
-    const r = await request(`${this.c.supabaseUrl}/auth/v1/user`, { headers: { apikey: this.c.serviceKey, authorization: `Bearer ${jwt}` } }, { fetcher: this.fetcher, service: 'Autenticación' }); return r.json();
+    try{
+      const r = await request(`${this.c.supabaseUrl}/auth/v1/user`, { headers: { apikey: this.c.serviceKey, authorization: `Bearer ${jwt}` } }, { fetcher: this.fetcher, service: 'Autenticación' }); return r.json();
+    }catch(error){
+      if([401,403].includes(error.status)){
+        try{await this.authReady();}catch(check){if([401,403].includes(check.status))error.code='AUTH_SERVER_CONFIGURATION';}
+      }
+      throw error;
+    }
   }
   async login(email,password) {
     const r=await request(`${this.c.supabaseUrl}/auth/v1/token?grant_type=password`,{method:'POST',headers:{apikey:this.c.serviceKey,'content-type':'application/json'},body:JSON.stringify({email,password})},{fetcher:this.fetcher,service:'Autenticación'});return r.json();

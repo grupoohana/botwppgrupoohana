@@ -57,6 +57,7 @@ export function createApp(overrides={}) {
       if(path==='/api/admin'&&body.action==='retry') {if(!uuid(body.options?.job_id))throw Error('Job inválido');await db.rpc('wa_retry',{p_empresa:body.company_id,p_job:body.options.job_id,p_accept_duplicate_risk:body.options.accept_duplicate_risk===true},jwt);return Response.json({ok:true},{headers});}
       return Response.json(await db.rpc(name,{p_empresa:body.company_id,p_action:body.action||'status',p_options:body.options||{}},jwt),{headers});
     }catch(error){
+      if(error.code==='AUTH_SERVER_CONFIGURATION')return Response.json({error:'La clave de Supabase configurada en Vercel no es válida. Un administrador debe revisar SUPABASE_SERVICE_ROLE_KEY y volver a desplegar el bot.'},{status:503,headers});
       if(error.service==='Autenticación'&&[401,403].includes(error.status))return Response.json({error:'Tu sesión no es válida. Vuelve a iniciar sesión en la app.'},{status:401,headers});
       if(path==='/api/link'&&error.service==='Supabase'&&error.code==='P0002')return Response.json({error:'WhatsApp no está habilitado para esta empresa. Un administrador debe configurarlo en Configuración → WhatsApp → Configurar WhatsApp de la empresa.'},{status:409,headers});
       return Response.json({error:'Operación rechazada. Revisa tu sesión, permisos, empresa y configuración.'},{status:400,headers});
